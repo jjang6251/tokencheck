@@ -492,11 +492,11 @@ function connectWebSocket() {
     console.log('웹소켓 연결 시도 중...');
     
     // 웹소켓 연결 (서버 URL을 적절히 수정하세요)
-    socket = io('https://wooajung.shop', {
+    socket = io('https://www.wooajung.shop', {
       reconnectionAttempts: 5,
       timeout: 5000,
       // 개발 환경에서만 사용 (CORS 이슈 방지)
-      transports: ['websocket', 'polling']
+      transports: ['polling']
     });
     
     // 연결 이벤트 핸들러
