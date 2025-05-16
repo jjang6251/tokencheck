@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>메타마스크 스타일 암호화폐 지갑</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+<style>
+:root {
+  --primary-color: #1e88e5;
+  --secondary-color: #252836;
+  --text-color: #e4e6ed;
+  --border-color: #3a3f55;
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+  --background-color: #1a1b26;
+  --card-background: #252836;
+  --input-background: #2e3446;
+  --token-background: #3a3f55;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.wallet-container {
+  width: 100%;
+  max-width: 380px;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+
+.wallet-header {
+  padding: 20px;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.wallet-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.network-status {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.online {
+  background-color: var(--success-color);
+}
+
+.offline {
+  background-color: var(--danger-color);
+}
+
+.account-selector {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.account-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--input-background);
+  color: var(--text-color);
+  font-size: 0.9rem;
+  margin-top: 5px;
+}
+
+.account-section {
+  padding: 15px 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.account-label, .balance-label {
+  font-size: 0.8rem;
+  color: #999;
+  margin-bottom: 10px;
+}
+
+.account-id {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--input-background);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+}
+
+.account-address {
+  font-size: 0.85rem;
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.copy-btn {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-left: 8px;
+}
+
+.balance-section {
+  padding: 20px;
+  text-align: center;
+  background-color: var(--secondary-color);
+  margin: 0 20px 20px;
+  border-radius: 8px;
+}
+
+.total-balance, .current-balance {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 5px;
+  color: white;
+}
+
+.balance-usd {
+  font-size: 0.9rem;
+  color: #999;
+}
+
+.token-list {
+  padding: 0 20px 20px;
+}
+
+.token-list-header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.token-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+}
+
+.token-item:last-child {
+  border-bottom: none;
+}
+
+.token-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  color: white;
+  flex-shrink: 0;
+}
+
+.operator-icon {
+  background-color: #e74c3c;
+}
+
+.jang-icon {
+  background-color: #3498db;
+}
+
+.choi-icon {
+  background-color: #2ecc71;
+}
+
+.token-info {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.token-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.token-symbol {
+  font-size: 0.7rem;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.token-balance {
+  font-weight: 600;
+  margin-left: 10px;
+  white-space: nowrap;
+}
+
+.actions-section {
+  display: flex;
+  justify-content: space-around;
+  padding: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.action-btn {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.action-btn:hover {
+  background-color: #1976d2;
+}
+
+.action-btn:active {
+  transform: translateY(1px);
+}
+
+.active-account {
+  background-color: rgba(30, 136, 229, 0.1);
+  border-left: 3px solid var(--primary-color);
+}
+
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  background-color: var(--success-color);
+  color: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transform: translateX(150%);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1000;
+}
+
+.toast.show {
+  transform: translateX(0);
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.balance-update {
+  animation: pulse 1s;
+}
+
+.user-role {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 5px;
+  display: inline-block;
+  vertical-align: middle;
+  color: white;
+  font-weight: 400;
+}
+
+#jang-item .user-role {
+  background-color: #9b59b6;
+}
+
+#choi-item .user-role {
+  background-color: #e67e22;
+}
+</style>
+</head>
+<body>
+<div class="wallet-container">
+<div class="wallet-header">
+  <div class="wallet-title">암호화폐 지갑</div>
+  <div class="network-status">
+    <div id="connection-status" class="status-dot offline"></div>
+    <span id="status-text">오프라인</span>
+  </div>
+</div>
+
+<div class="account-selector">
+  <label for="account-select">계정 선택</label>
+  <select id="account-select" class="account-select">
+    <option value="operator">운영자</option>
+    <option value="jang">권인우 (구매자)</option>
+    <option value="choi">최윤서 (판매자)</option>
+  </select>
+</div>
+
+<div class="account-section">
+  <div class="account-label">지갑 주소</div>
+  <div class="account-id">
+    <div class="account-address" id="account-address">로딩 중...</div>
+    <button class="copy-btn" id="copy-btn">복사</button>
+  </div>
+</div>
+
+<div class="balance-section">
+  <div class="balance-label">보유 잔액</div>
+  <div class="current-balance" id="current-balance">0</div>
+  <div class="balance-usd">USDT</div>
+</div>
+
+<div class="token-list">
+  <div class="token-list-header">전체 USDT 현황</div>
+  
+  <div class="token-item" id="operator-item">
+    <div class="token-icon operator-icon">운</div>
+    <div class="token-info">
+      <div class="token-name">운영자</div>
+      <div class="token-symbol" id="operator-address">0x...</div>
+    </div>
+    <div class="token-balance" id="operator-balance">0</div>
+  </div>
+  
+  <div class="token-item" id="jang-item">
+    <div class="token-icon jang-icon">권</div>
+    <div class="token-info">
+      <div class="token-name">권인우 <span class="user-role">구매자</span></div>
+      <div class="token-symbol" id="jang-address">0x...</div>
+    </div>
+    <div class="token-balance" id="jang-balance">0</div>
+  </div>
+  
+  <div class="token-item" id="choi-item">
+    <div class="token-icon choi-icon">최</div>
+    <div class="token-info">
+      <div class="token-name">최윤서 <span class="user-role">판매자</span></div>
+      <div class="token-symbol" id="choi-address">0x...</div>
+    </div>
+    <div class="token-balance" id="choi-balance">0</div>
+  </div>
+</div>
+
+<div class="actions-section">
+  <button class="action-btn" id="refresh-btn">새로고침</button>
+</div>
+</div>
+
+<div class="toast" id="toast">주소가 클립보드에 복사되었습니다</div>
+
+<script>
+// 사용자별 지갑 주소 정의
+const walletAddresses = {
+  operator: '0x3e5aa75A1846BdA89669D78fbe8C1719eBE0586D',
+  jang: '0xf9F603877A66290541Be631529090Be1dd746C64',
+  choi: '0x79cC067AbEc10bCF9caBCAb814c9c2Dd61F79e4B'
+};
+
+// DOM 요소
+const accountSelect = document.getElementById('account-select');
+const accountAddress = document.getElementById('account-address');
+const copyBtn = document.getElementById('copy-btn');
+const toast = document.getElementById('toast');
+const currentBalance = document.getElementById('current-balance');
+const operatorBalance = document.getElementById('operator-balance');
+const jangBalance = document.getElementById('jang-balance');
+const choiBalance = document.getElementById('choi-balance');
+const operatorAddress = document.getElementById('operator-address');
+const jangAddress = document.getElementById('jang-address');
+const choiAddress = document.getElementById('choi-address');
+const refreshBtn = document.getElementById('refresh-btn');
+const connectionStatus = document.getElementById('connection-status');
+const statusText = document.getElementById('status-text');
+const operatorItem = document.getElementById('operator-item');
+const jangItem = document.getElementById('jang-item');
+const choiItem = document.getElementById('choi-item');
+
+// 지갑 주소 표시 설정
+function formatAddress(address) {
+  if (!address) return "";
+  return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+}
+
+// 사용자 지갑 주소 설정
+operatorAddress.textContent = formatAddress(walletAddresses.operator);
+jangAddress.textContent = formatAddress(walletAddresses.jang);
+choiAddress.textContent = formatAddress(walletAddresses.choi);
+
+// 현재 선택된 계정 설정
+function setSelectedAccount(accountType) {
+  // 주소 표시 (전체 주소는 내부적으로 사용하고 화면에는 축약해서 표시)
+  const fullAddress = walletAddresses[accountType];
+  accountAddress.textContent = formatAddress(fullAddress);
+  
+  // 잔액 표시
+  let balance = 0;
+  if (accountType === 'operator') {
+    balance = parseInt(operatorBalance.textContent) || 0;
+    operatorItem.classList.add('active-account');
+    jangItem.classList.remove('active-account');
+    choiItem.classList.remove('active-account');
+  } else if (accountType === 'jang') {
+    balance = parseInt(jangBalance.textContent) || 0;
+    operatorItem.classList.remove('active-account');
+    jangItem.classList.add('active-account');
+    choiItem.classList.remove('active-account');
+  } else if (accountType === 'choi') {
+    balance = parseInt(choiBalance.textContent) || 0;
+    operatorItem.classList.remove('active-account');
+    jangItem.classList.remove('active-account');
+    choiItem.classList.add('active-account');
+  }
+  
+  // USDT 단위 표시
+  currentBalance.textContent = balance + ' USDT';
+}
+
+// 초기 계정 설정
+setSelectedAccount('operator');
+
+// 계정 선택 변경 시
+accountSelect.addEventListener('change', function() {
+  setSelectedAccount(this.value);
+});
+
+// 토스트 메시지 표시 함수
+function showToast(message) {
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3000);
+}
+
+// 주소 복사 기능
+copyBtn.addEventListener('click', () => {
+  const selectedAccount = accountSelect.value;
+  const fullAddress = walletAddresses[selectedAccount];
+  
+  navigator.clipboard.writeText(fullAddress)
+    .then(() => {
+      showToast('주소가 클립보드에 복사되었습니다');
+    })
+    .catch(err => {
+      console.error('주소 복사 실패:', err);
+      showToast('주소 복사에 실패했습니다');
+    });
+});
+
+// 웹소켓 연결
+let socket;
+let socketConnected = false;
+
+function connectWebSocket() {
+  try {
+    // 서버가 실행 중인지 확인하는 코드 추가
+    console.log('웹소켓 연결 시도 중...');
+    
+    // 웹소켓 연결 (서버 URL을 적절히 수정하세요)
+    socket = io('http://35.225.76.87', {
+      reconnectionAttempts: 5,
+      timeout: 5000,
+      // 개발 환경에서만 사용 (CORS 이슈 방지)
+      transports: ['websocket', 'polling']
+    });
+    
+    // 연결 이벤트 핸들러
+    socket.on('connect', () => {
+      console.log('웹소켓 연결 성공');
+      socketConnected = true;
+      
+      connectionStatus.classList.remove('offline');
+      connectionStatus.classList.add('online');
+      statusText.textContent = '온라인';
+      
+      // 토큰 업데이트 구독
+      socket.emit('subscribeToTokenUpdates');
+      
+      // 토큰 업데이트 요청
+      socket.emit('requestTokenUpdate');
+    });
+    
+    // 연결 시도 중 에러 처리
+    socket.on('connect_error', (error) => {
+      console.error('웹소켓 연결 에러:', error);
+      socketConnected = false;
+      connectionStatus.classList.remove('online');
+      connectionStatus.classList.add('offline');
+      statusText.textContent = '오프라인';
+      
+      // 서버가 실행되지 않음을 알림
+      showToast('서버에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요.');
+    });
+    
+    // 연결 해제 이벤트 핸들러
+    socket.on('disconnect', () => {
+      console.log('웹소켓 연결 해제');
+      socketConnected = false;
+      connectionStatus.classList.remove('online');
+      connectionStatus.classList.add('offline');
+      statusText.textContent = '오프라인';
+    });
+    
+    // 토큰 업데이트 이벤트 핸들러
+    socket.on('tokenUpdate', (tokens) => {
+      console.log('토큰 업데이트 받음:', tokens);
+      updateTokenBalances(tokens);
+    });
+  } catch (error) {
+    console.error('웹소켓 연결 오류:', error);
+    connectionStatus.classList.remove('online');
+    connectionStatus.classList.add('offline');
+    statusText.textContent = '오프라인';
+  }
+}
+
+// 토큰 잔액 업데이트
+function updateTokenBalances(tokens) {
+  tokens.forEach(token => {
+    if (token.userId === '운영자') {
+      operatorBalance.textContent = token.token + ' USDT';
+      operatorBalance.classList.add('balance-update');
+      setTimeout(() => operatorBalance.classList.remove('balance-update'), 1000);
+      
+      // 현재 선택된 계정이 운영자인 경우 잔액 업데이트
+      if (accountSelect.value === 'operator') {
+        currentBalance.textContent = token.token + ' USDT';
+        currentBalance.classList.add('balance-update');
+        setTimeout(() => currentBalance.classList.remove('balance-update'), 1000);
+      }
+    }
+    else if (token.userId === '권인우') {
+      jangBalance.textContent = token.token + ' USDT';
+      jangBalance.classList.add('balance-update');
+      setTimeout(() => jangBalance.classList.remove('balance-update'), 1000);
+      
+      // 현재 선택된 계정이 권인우인 경우 잔액 업데이트
+      if (accountSelect.value === 'jang') {
+        currentBalance.textContent = token.token + ' USDT';
+        currentBalance.classList.add('balance-update');
+        setTimeout(() => currentBalance.classList.remove('balance-update'), 1000);
+      }
+    }
+    else if (token.userId === '최윤서') {
+      choiBalance.textContent = token.token + ' USDT';
+      choiBalance.classList.add('balance-update');
+      setTimeout(() => choiBalance.classList.remove('balance-update'), 1000);
+      
+      // 현재 선택된 계정이 최윤서인 경우 잔액 업데이트
+      if (accountSelect.value === 'choi') {
+        currentBalance.textContent = token.token + ' USDT';
+        currentBalance.classList.add('balance-update');
+        setTimeout(() => currentBalance.classList.remove('balance-update'), 1000);
+      }
+    }
+  });
+}
+
+// 테스트용 초기 데이터
+const initialTokens = [
+  { userId: '운영자', token: 10000 },
+  { userId: '권인우', token: 5000 },
+  { userId: '최윤서', token: 2500 }
+];
+
+// 초기 데이터로 UI 업데이트
+updateTokenBalances(initialTokens);
+
+// 웹소켓 연결 시작
+connectWebSocket();
+
+// 새로고침 버튼 클릭 시 페이지 전체 새로고침 (F5와 같은 효과)
+refreshBtn.addEventListener('click', () => {
+  // 페이지 새로고침
+  window.location.reload();
+});
+
+// 토큰 항목 클릭 시 해당 계정 선택
+operatorItem.addEventListener('click', () => {
+  accountSelect.value = 'operator';
+  setSelectedAccount('operator');
+});
+
+jangItem.addEventListener('click', () => {
+  accountSelect.value = 'jang';
+  setSelectedAccount('jang');
+});
+
+choiItem.addEventListener('click', () => {
+  accountSelect.value = 'choi';
+  setSelectedAccount('choi');
+});
+</script>
+</body>
+</html>
